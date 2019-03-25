@@ -1,0 +1,19 @@
+{
+  "name": "battleship-frontend",
+  "verbose": true,
+  "setupFilesAfterEnv": ["./node_modules/jest-enzyme/lib/index.js"],
+  "testEnvironment": "enzyme",
+  "snapshotSerializers": [
+    "enzyme-to-json/serializer"
+  ],
+  "testPathIgnorePatterns": [
+    "/node_modules/",
+    "<rootDir>/node_modules/",
+    "<rootDir>/tests/e2e/",
+    "<rootDir>/config/"
+  ],
+  "setupFiles": ["./test/helpers.js"],
+  "moduleNameMapper": {
+    "\\.(css|scss)$": "identity-obj-proxy"
+  }
+}

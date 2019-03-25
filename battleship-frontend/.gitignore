@@ -1,0 +1,28 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# npm lock
+package-lock.json
+
+# Webpack output
+dist
+
+# Editor
+.vscode
+
+# Mac
+.DS_Store
+
+# Serverless
+.serverless
+
+# Jest snapshots
+__snapshots__/

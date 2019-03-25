@@ -1,0 +1,11 @@
+{
+  "verbose": false,
+  "ignore": [
+    "./src/client/",
+    "./node_modules/",
+    "*.log"
+  ],
+  "events": {
+    "restart": "echo \"App restarted due to changes in:\n'$FILENAME'\""
+  }
+}
