@@ -4,9 +4,14 @@
 import { Schema, model } from 'mongoose';
 import bcrypt from 'bcrypt';
 // import { BaseUser, UserCreateBody } from '../types/user'
+import toJson from '@meanie/mongoose-to-json';
 
 const UserSchema = new Schema({
-  password: { type: String, required: true, },
+  password: {
+    type: String,
+    required: true,
+    private: true,
+  },
   username: {
     type: String,
     required: true,
@@ -25,13 +30,6 @@ UserSchema.methods.comparePassword = async function (candidate: string) {
   return await bcrypt.compare(candidate, this.password);
 };
 
-UserSchema.method('toClient', () => {
-  const obj = this.toObject();
-
-  obj.id = obj._id;
-  delete obj._id;
-
-  return obj;
-});
+UserSchema.plugin(toJson);
 
 export default model('User', UserSchema);

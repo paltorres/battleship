@@ -12,7 +12,7 @@ import { BaseUser } from '../../types/user';
 class UserController {
   routes = this.router();
 
-  async getUser(req: Request, res: Response): Promise<void> {
+  async get(req: Request, res: Response): Promise<void> {
     let user: any;
     try {
       user = await UserService.getById(req.params.userId);
@@ -50,7 +50,7 @@ class UserController {
   router() {
     return Router()
       .post('/', this.create)
-      .get('/:userId', this.getUser);
+      .get('/:userId', this.get);
   }
 }
 
