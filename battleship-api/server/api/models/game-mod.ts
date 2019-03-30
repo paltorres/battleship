@@ -1,30 +1,18 @@
-import { Schema, model } from 'mongoose';
+/**
+ * GameMod model.
+ */
+import { Document, Schema, Model, model } from 'mongoose';
 import toJson from '@meanie/mongoose-to-json';
 import uniqueValidator from 'mongoose-unique-validator';
 
+import { IGameMod } from './interfaces/igame-mod';
 
-const AVAILABLE_STYLES = ['default'];
-
-// to types
-interface FleetConfig {
-  type: string,
-  quantity: number,
+export interface IGameModModel extends IGameMod, Document {
 }
 
-interface Board {
-  height: number,
-  width: number,
-}
+export const AVAILABLE_STYLES = ['default'];
 
-export interface GameModDefinition {
-  name: string,
-  playerQuantity: number,
-  style: string
-  fleet: [FleetConfig]
-  board: Board,
-}
-
-const GameModSchema: Schema = new Schema({
+const gameModSchema: Schema = new Schema({
   name: {
     type: String,
     unique: true,
@@ -67,7 +55,7 @@ const GameModSchema: Schema = new Schema({
 });
 
 
-GameModSchema.plugin(toJson);
-GameModSchema.plugin(uniqueValidator);
+gameModSchema.plugin(toJson);
+gameModSchema.plugin(uniqueValidator);
 
-export default model('GameMod', GameModSchema);
+export const GameMod: Model<IGameModModel> = model<IGameModModel>('GameMod', gameModSchema);

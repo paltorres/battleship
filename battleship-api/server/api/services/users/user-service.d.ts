@@ -1,7 +1,7 @@
 /**
  * User interfaces
  */
-export interface UserCreateInterface {
+export interface User {
   username: string,
   password: string,
 }

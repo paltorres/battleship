@@ -1,20 +1,23 @@
 /**
  * Player model.
  */
-import values from 'lodash.values';
-import { Schema, model } from 'mongoose';
+import values from 'ramda/src/values';
+import { Document, Schema, Model, model } from 'mongoose';
 import toJson from '@meanie/mongoose-to-json';
 
-export const PLAYER_ACTIONS = {
-  SHOT: 'shot',
-  DELETE: 'delete',
-};
+import { IPlayer, PLAYER_ACTIONS } from './interfaces/iplayer';
+
 const ACTION_VALUES: string[] = values(PLAYER_ACTIONS);
 
-const PlayerSchema: Schema = new Schema({
+export interface IPlayerModel extends IPlayer, Document {
+  canDelete(): boolean;
+  canShot(): boolean,
+}
+
+const playerSchema: Schema = new Schema({
   dateCreated: { type: Date,  default: Date.now() },
   lastUpdated: { type: Date, default: Date.now() },
-  userId: {
+  user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
@@ -54,14 +57,17 @@ const PlayerSchema: Schema = new Schema({
   },
 });
 
-PlayerSchema.method('canDelete', (): boolean => {
+playerSchema.method('canDelete', canDelete);
+playerSchema.method('canShot', canShot);
+
+
+function canDelete(): boolean {
   return this.availableActions.indexOf(PLAYER_ACTIONS.DELETE) !== -1;
-});
-
-PlayerSchema.method('canShot', (): boolean => {
+}
+function canShot(): boolean {
   return this.availableActions.indexOf(PLAYER_ACTIONS.SHOT) !== -1;
-});
+}
 
-PlayerSchema.plugin(toJson);
+playerSchema.plugin(toJson);
 
-export default model('Player', PlayerSchema);
+export const Player: Model<IPlayerModel> = model<IPlayerModel>('Player', playerSchema);

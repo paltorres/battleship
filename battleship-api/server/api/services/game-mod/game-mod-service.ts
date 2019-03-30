@@ -1,5 +1,5 @@
 /**
- *
+ * Game mod service.
  */
 import prop from 'ramda/src/prop';
 import objOf from 'ramda/src/objOf';
@@ -21,7 +21,7 @@ class GameModService {
       return objOf('errors')(prop('errors')(error));
     }
 
-    return { gameMod };
+    return objOf('gameMod')(gameMod);
   }
 
   async get(id: string) {

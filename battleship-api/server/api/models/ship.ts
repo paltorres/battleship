@@ -1,17 +1,25 @@
-import values from 'lodash.values';
-import { Schema, model } from 'mongoose';
+/**
+ * Ship model.
+ */
+import values from 'ramda/src/values';
+import { Document, Schema, Model, model } from 'mongoose';
 import toJson from '@meanie/mongoose-to-json';
 
+import { IShip } from './interfaces/iship';
+
+export interface IShipModel extends IShip, Document {
+}
+
 const SHIP_DIRECTIONS = ['vertical', 'horizontal'];
-const SHIP_TYPES = {
+export const SHIPS = {
   'aircraft-carrier': 4,
   'submarine': 3,
   'cruiser': 2,
   'destroyer': 1,
 };
 
-
-const ShipSchema: Schema = new Schema({
+const shipSchema: Schema = new Schema({
+  // TODO: check if this is enough
   placement: {
     type: String,
     required: true,
@@ -23,7 +31,7 @@ const ShipSchema: Schema = new Schema({
   },
   type: {
     type: String,
-    enum: values(SHIP_TYPES),
+    enum: values(SHIPS),
   },
   sunken: {
     type: Boolean,
@@ -36,12 +44,12 @@ const ShipSchema: Schema = new Schema({
   },
 });
 
-ShipSchema.virtual('length', getVirtualLength);
+shipSchema.virtual('length', getVirtualLength);
 
 function getVirtualLength() {
-  return SHIP_TYPES[this.type];
+  return SHIPS[this.type];
 }
 
-ShipSchema.plugin(toJson);
+shipSchema.plugin(toJson);
 
-export default model('Ship', ShipSchema);
+export const Ship: Model<IShipModel> = model<IShipModel>('User', shipSchema);

@@ -3,7 +3,7 @@
  */
 import { Router, Request, Response, NextFunction } from 'express';
 import UserService from '../../services/users/user-service';
-import AuthService from '../../services/auth/auth-service';
+import AuthService from '../../services/auth-service';
 
 import { BaseUser, ValidateUserRequest } from '../../types/user';
 import { LoginResponse } from './types';

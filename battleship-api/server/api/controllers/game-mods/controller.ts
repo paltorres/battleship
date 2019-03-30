@@ -30,7 +30,7 @@ class GameModController {
       return;
     }
 
-    res.status(HttpStatus.OK).json(gameMod);
+    res.status(HttpStatus.CREATED).json(gameMod);
   }
 
   async get(req: Request, res: Response): Promise<void> {

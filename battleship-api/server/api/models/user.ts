@@ -1,12 +1,18 @@
 /**
  * User model.
  */
-import { Schema, model } from 'mongoose';
-import bcrypt from 'bcrypt';
-// import { BaseUser, UserCreateBody } from '../types/user'
+import { Document, Schema, Model, model } from 'mongoose';
 import toJson from '@meanie/mongoose-to-json';
+import bcrypt from 'bcrypt';
 
-const UserSchema = new Schema({
+import { IUser } from './interfaces/iuser';
+
+export interface IUserModel extends IUser, Document {
+  comparePassword(password: string): boolean;
+  hashPassword(): Promise<String>,
+}
+
+const userSchema: Schema = new Schema({
   password: {
     type: String,
     required: true,
@@ -22,14 +28,17 @@ const UserSchema = new Schema({
   lastUpdated: { type: Date, default: Date.now() },
 });
 
-UserSchema.methods.hashPassword = async function () {
-  return await bcrypt.hash(this.password, 12);
+userSchema.method('hashPassword', hashPassword);
+userSchema.method('comparePassword', comparePassword);
+
+async function comparePassword(password: string) {
+  return await bcrypt.compare(password, this.password);
 };
 
-UserSchema.methods.comparePassword = async function (candidate: string) {
-  return await bcrypt.compare(candidate, this.password);
-};
+async function hashPassword() {
+  await bcrypt.hash(this.password, 12);
+}
 
-UserSchema.plugin(toJson);
+userSchema.plugin(toJson);
 
-export default model('User', UserSchema);
+export const User: Model<IUserModel> = model<IUserModel>('User', userSchema);
