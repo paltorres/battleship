@@ -2,7 +2,6 @@
  * API routes.
  */
 import { Application } from 'express';
-import examplesRouter from './api/controllers/examples/router';
 
 import users from './api/controllers/users/controller';
 import games from './api/controllers/games/controller';
@@ -15,7 +14,4 @@ export default function routes(app: Application): void {
   app.use('/api/battleships/auth', auth.routes);
   app.use('/api/battleships/games', games.routes);
   app.use('/api/battleships/mods', gameMods.routes);
-
-
-  app.use('/api/v1/examples', examplesRouter);
 };

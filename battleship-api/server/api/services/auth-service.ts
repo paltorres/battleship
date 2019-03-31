@@ -17,7 +17,10 @@ import { User, IUserModel } from '../models/user';
 const SECRET = config.get('auth.secret');
 const SECRET_2 = config.get('auth.secret2');
 
-type TokenResponse = [string, string];
+interface TokenResponse {
+  token: string,
+  refreshToken: string,
+}
 
 class AuthService {
   createTokens(user, refreshSecret = SECRET_2): TokenResponse {
@@ -33,7 +36,7 @@ class AuthService {
       objOf('expiresIn')('7d'),
     );
 
-    return [token, refreshToken];
+    return { token, refreshToken };
   }
 
   async refreshTokens(token: string, refreshToken: string) {
@@ -53,14 +56,9 @@ class AuthService {
     if (verifyError) {
       return null;
     }
+    const newTokens = await this.createTokens(user, refreshSecret);
 
-    // todo: check
-    const [newToken, newRefreshToken] = await this.createTokens(user, refreshSecret);
-    return {
-      token: newToken,
-      refreshToken: newRefreshToken,
-      user,
-    };
+    return { user, ...newTokens };
   }
 
   verifyToken(token: string) {

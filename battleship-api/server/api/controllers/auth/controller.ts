@@ -1,12 +1,21 @@
 /**
  * Class to auth a user.
  */
-import { Router, Request, Response, NextFunction } from 'express';
-import UserService from '../../services/users/user-service';
+import { Router, Request, Response } from 'express';
+import * as HttpStatus from 'http-status-codes';
+
+import prop from 'ramda/src/prop';
+import path from 'ramda/src/path';
+import has from 'ramda/src/has';
+
+import UserService from '../../services/user-service';
 import AuthService from '../../services/auth-service';
 
-import { BaseUser, ValidateUserRequest } from '../../types/user';
-import { LoginResponse } from './types';
+export interface LoginResponse {
+  token: string,
+  refreshToken: string,
+}
+
 
 class AuthController {
   routes = this.router();
@@ -14,39 +23,46 @@ class AuthController {
   /**
    * Response a JSON object with the token and refreshToken.
    */
-  async getToken(req: Request, res: Response, next: NextFunction): Promise<void> {
-    const body: ValidateUserRequest = req.body;
-    const response: LoginResponse = { ok: false, token: null, refreshToken: null };
-
-    const user: BaseUser = await UserService.validateUser(body);
-
-    if (!user) {
-      res.status(400).json(response);
-      return;
-    }
+  async getToken(req: Request, res: Response): Promise<void> {
+    let user;
 
     try {
-      [response.token, response.refreshToken] = AuthService.createTokens(user);
-    } catch (e) {
-      next(e);
+      user = await UserService.validateUser(prop('body', req));
+    } catch(e) {
+      console.log(e);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
       return;
     }
 
-    response.ok = true;
+    if (!user) {
+      res.status(400).json();
+      return;
+    }
+
+    let response: LoginResponse = { token: null, refreshToken: null };
+    try {
+      response = AuthService.createTokens(user);
+    } catch (e) {
+      console.log(e);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+      return;
+    }
 
     res.status(200).json(response);
   }
 
-  async me(req: any, res: Response): Promise<void> {
-    const token: any = req.headers['x-token'] || '';
+  async me(req: Request, res: Response): Promise<void> {
+    const token = path(['headers', 'x-token'], req);
+
     if (token) {
-      let user: any;
+      let user;
       try {
         user = AuthService.verifyToken(token).user;
-      } catch (err) {
-        const refreshToken: any = req.headers['x-refresh-token'];
+      } catch (e) {
+        const refreshToken = path(['headers', 'x-refresh-token'], req);
         const newTokens = await AuthService.refreshTokens(token, refreshToken);
-        if (newTokens.token && newTokens.refreshToken) {
+
+        if (has('token', newTokens) && has('refreshToken', newTokens)) {
           res.set('Access-Control-Expose-Headers', 'x-token, x-refresh-token');
           res.set('x-token', newTokens.token);
           res.set('x-refresh-token', newTokens.refreshToken);

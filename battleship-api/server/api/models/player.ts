@@ -1,13 +1,17 @@
 /**
  * Player model.
  */
-import values from 'ramda/src/values';
 import { Document, Schema, Model, model } from 'mongoose';
 import toJson from '@meanie/mongoose-to-json';
 
-import { IPlayer, PLAYER_ACTIONS } from './interfaces/iplayer';
+import values from 'ramda/src/values';
 
-const ACTION_VALUES: string[] = values(PLAYER_ACTIONS);
+import { IPlayer } from './interfaces/iplayer';
+
+export enum PLAYER_ACTIONS {
+  SHOT = 'shot',
+  DELETE = 'delete',
+}
 
 export interface IPlayerModel extends IPlayer, Document {
   canDelete(): boolean;
@@ -31,7 +35,7 @@ const playerSchema: Schema = new Schema({
   availableActions: {
     type: [String],
     lowercase: true,
-    enum: ACTION_VALUES,
+    enum: values(PLAYER_ACTIONS),
     default: [],
   },
   fleet: [{
@@ -49,7 +53,7 @@ const playerSchema: Schema = new Schema({
     required: true,
     default: 0,
   },
-  // si esto va aca?
+  // si esto va aca? no che, capaz hagamos un shot history y mandar por ahi la data
   shoots: {
     type: Number,
     required: true,

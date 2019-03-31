@@ -1,18 +1,39 @@
 /**
  * Game model.
  */
-import values from 'ramda/src/values';
 import { Document, Schema, Model, model } from 'mongoose';
 import toJson from '@meanie/mongoose-to-json';
 
-import { IGame, GAME_STATUS } from './interfaces/igame';
+import values from 'ramda/src/values';
+import equals from 'ramda/src/equals';
+import and from 'ramda/src/and';
+import gte from 'ramda/src/gte';
+import lte from 'ramda/src/lte';
+import prop from 'ramda/src/prop';
+import not from 'ramda/src/not';
+
+import { IGame } from './interfaces/igame';
+
+export enum GAME_STATUS {
+  IN_GAME = 'in_game', 
+  WAITING_FOR_OPPONENT = 'waiting_for_opponent', 
+  FINISHED = 'finished',
+  DELETED = 'deleted',
+}
+
+interface CheckError {
+  message: string,
+}
 
 export interface IGameModel extends IGame, Document {
-  isInGame(): boolean;
+  isNotInGame(): boolean;
   canBeDeleted(): boolean,
   isWaitingForOpponent(): boolean,
-  isFinished(): boolean,
-  isDeleted(): boolean,
+  isNotFinished(): boolean,
+  userAlreadyNotExists(user: string): boolean,
+  checkIfCanAddUser(userCandidate: string): CheckError,
+  canBeStarted(): boolean,
+  start(): void,
 }
 
 const TITLE = {
@@ -28,7 +49,7 @@ const gameSchema: Schema = new Schema({
     ref: 'Player',
     select: true,
     validate: validatePlayers,
-    message: props => `${props.value} is not a valid user or already exists in the game!`
+    message: props => `${props.value} is not a valid user or already exists in the game!`,
   }],
   status: {
     type: String,
@@ -40,15 +61,22 @@ const gameSchema: Schema = new Schema({
     required: true,
     validate: validateTitle,
   },
-  mode: {
+  mod: {
     type: Schema.Types.ObjectId,
     ref: 'GameMod',
     required: true,
   },
 });
 
-gameSchema.method('isInGame', isInGame);
+gameSchema.method('isNotInGame', isNotInGame);
 gameSchema.method('canBeDeleted', canBeDeleted);
+gameSchema.method('userAlreadyNotExists', userAlreadyNotExists);
+gameSchema.method('isNotFinished', isNotFinished);
+gameSchema.method('checkIfCanAddUser', checkIfCanAddUser);
+
+gameSchema.method('canBeStarted', canBeStarted);
+gameSchema.method('start', start);
+
 
 // The player shouldn't be twice
 function validatePlayers(player) {
@@ -65,16 +93,74 @@ function validatePlayers(player) {
 }
 
 function validateTitle() {
-  return this.title.length >= TITLE.MIN_LENGTH && this.title.length <= TITLE.MAX_LENGTH;
+  return and(gte(this.title.length, TITLE.MIN_LENGTH), lte(this.title.length, TITLE.MAX_LENGTH));
 }
-function isInGame(): boolean {
-  return this.status === GAME_STATUS.IN_GAME;
+function isNotInGame(): boolean {
+  return not(equals(this.status, GAME_STATUS.IN_GAME));
 }
 
 function canBeDeleted(): boolean {
-  return this.status === GAME_STATUS.WAITING_FOR_OPPONENT;
+  return equals(this.status, GAME_STATUS.WAITING_FOR_OPPONENT);
+}
+
+function isNotFinished(): boolean {
+  return not(equals(this.status, GAME_STATUS.FINISHED));
+}
+
+function userAlreadyNotExists(user: string): boolean {
+  const player = this.players.find(p =>  equals(p.user._id.toString(), user));
+  return not(player);
+}
+
+function checkIfCanAddUser(userCandidate: string): CheckError {
+  const self = this;
+  let errorMessage: string = null;
+
+  const userAlreadyExistsCheck = (): boolean => self.userAlreadyNotExists(userCandidate);
+  const isNotFinished = (): boolean  => self.isNotFinished();
+  const isNotInGame = (): boolean => self.isNotInGame();
+
+  const checkList = [
+    {
+      passCheck: userAlreadyExistsCheck,
+      message: 'user already exists',
+    },
+    {
+      passCheck: isNotFinished,
+      message: 'game finished',
+    },
+    {
+      passCheck: isNotInGame,
+      message: 'game in course',
+    },
+  ];
+
+  let i = 0;
+  do {
+    const currentCheck = checkList[i];
+    const passCheck = prop('passCheck', currentCheck);
+
+    if (!passCheck()) {
+      errorMessage = prop('message', currentCheck);
+    }
+    i = i + 1;
+  } while(!errorMessage && i < checkList.length);
+
+  if (errorMessage) {
+    return { message: errorMessage };
+  }
+
+  return null;
+}
+
+function canBeStarted() {
+  return equals(this.mod.playerQuantity, this.players.length);
+}
+
+function start() {
+  this.status = GAME_STATUS.IN_GAME;
 }
 
 gameSchema.plugin(toJson);
 
-export const Game: Model<IGameModel> = model<IGameModel>('User', gameSchema);
+export const Game: Model<IGameModel> = model<IGameModel>('Game', gameSchema);

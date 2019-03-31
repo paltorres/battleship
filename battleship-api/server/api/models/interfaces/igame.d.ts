@@ -1,17 +1,12 @@
-import { IGameMode } from './i-game-mod';
-
-export enum GAME_STATUS {
-  IN_GAME, 
-  WAITING_FOR_OPPONENT, 
-  FINISHED, 
-  DELETED,
-}
+import { IGameMod } from './igame-mod';
+import { IPlayer } from './iplayer';
+import { IPlayerModel } from '../player';
 
 export interface IGame {
   dateCreated: Date,
   lastUpdated: Date,
-  players: string[],
+  players: (string|IPlayer|IPlayerModel)[],
   status: string,
   title: string,
-  mode: string | IGameMode,
+  mod: IGameMod,
 }

@@ -7,6 +7,7 @@ import uniqueValidator from 'mongoose-unique-validator';
 
 import { IGameMod } from './interfaces/igame-mod';
 
+export { IGameMod }
 export interface IGameModModel extends IGameMod, Document {
 }
 

@@ -4,16 +4,17 @@
 import prop from 'ramda/src/prop';
 import objOf from 'ramda/src/objOf';
 
-import GameModModel from '../../models/game-mod';
+import { GameMod, IGameModModel } from '../models/game-mod';
 
-interface CreateResult {
+
+interface GameModCreateResult {
   errors?: object,
-  gameMod?: any,
+  gameMod?: IGameModModel,
 }
 
 class GameModService {
-  async create(body): Promise<CreateResult> {
-    const gameMod = new GameModModel(body);
+  async create(body): Promise<GameModCreateResult> {
+    const gameMod = new GameMod(body);
 
     try {
       await gameMod.validate();
@@ -21,15 +22,17 @@ class GameModService {
       return objOf('errors')(prop('errors')(error));
     }
 
+    await gameMod.save();
+
     return objOf('gameMod')(gameMod);
   }
 
   async get(id: string) {
-    return await GameModModel.findById(id);
+    return await GameMod.findById(id);
   }
 
   async getAll() {
-    return await GameModModel.find({});
+    return await GameMod.find({});
   }
 }
 

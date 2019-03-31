@@ -6,8 +6,7 @@ import * as HttpStatus from 'http-status-codes';
 
 // import log from '../../../common/logger';
 
-import UserService from '../../services/users/user-service';
-import { BaseUser } from '../../types/user';
+import UserService from '../../services/user-service';
 
 class UserController {
   routes = this.router();
@@ -17,8 +16,7 @@ class UserController {
     try {
       user = await UserService.getById(req.params.userId);
     } catch (e) {
-      // log.error(e);
-
+      console.log(e);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).end();
       return;
     }
@@ -32,19 +30,22 @@ class UserController {
   }
 
   async create(req: Request, res: Response): Promise<void> {
-    try {
-      const user: BaseUser = await UserService.create(req.body);
+    const { user, errors } = await UserService.create(req.body);
 
-      if (!user) {
-        res.status(HttpStatus.BAD_REQUEST).json({ message: 'username or password invalid' });
-        return;
-      }
-
-      res.status(HttpStatus.CREATED).json(user);
-    } catch (e) {
-      // log.error(e);
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+    if (errors) {
+      res.status(HttpStatus.BAD_REQUEST).json(errors);
+      return;
     }
+
+    try {
+      await user.save();
+    } catch(e) {
+      console.log(e);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+      return;
+    }
+
+    res.status(HttpStatus.CREATED).json(user);
   }
 
   router() {

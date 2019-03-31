@@ -10,6 +10,7 @@ import os from 'os';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 import toJson from '@meanie/mongoose-to-json';
+import bluebird from 'bluebird';
 
 import addUser from './add-user';
 import swaggerify from './swagger';
@@ -22,6 +23,7 @@ export default class ExpressServer {
     const root = path.normalize(__dirname + '/../..');
     mongoose.plugin(toJson);
     mongoose.connect('mongodb://localhost/battleship', { useNewUrlParser: true, useCreateIndex: true });
+    mongoose.Promise = bluebird;
 
     app.set('appPath', root + 'client');
     app.use(bodyParser.json({ limit: process.env.REQUEST_LIMIT || '100kb' }));

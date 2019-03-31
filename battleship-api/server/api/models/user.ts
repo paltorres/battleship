@@ -3,6 +3,7 @@
  */
 import { Document, Schema, Model, model } from 'mongoose';
 import toJson from '@meanie/mongoose-to-json';
+import uniqueValidator from 'mongoose-unique-validator';
 import bcrypt from 'bcrypt';
 
 import { IUser } from './interfaces/iuser';
@@ -33,12 +34,14 @@ userSchema.method('comparePassword', comparePassword);
 
 async function comparePassword(password: string) {
   return await bcrypt.compare(password, this.password);
-};
+}
 
+// add this to hook
 async function hashPassword() {
-  await bcrypt.hash(this.password, 12);
+  this.password = await bcrypt.hash(this.password, 12);
 }
 
 userSchema.plugin(toJson);
+userSchema.plugin(uniqueValidator);
 
 export const User: Model<IUserModel> = model<IUserModel>('User', userSchema);

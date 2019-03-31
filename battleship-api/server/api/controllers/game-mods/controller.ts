@@ -4,9 +4,9 @@
 import { Router, Request, Response } from 'express';
 
 import * as HttpStatus from 'http-status-codes';
-import prop from 'ramda/src/prop';
+import path from 'ramda/src/path';
 
-import GameModService from '../../services/game-mod/game-mod-service';
+import GameModService from '../../services/game-mod-service';
 
 
 class GameModController {
@@ -15,18 +15,19 @@ class GameModController {
   async create(req: Request, res: Response): Promise<void> {
     const body = req.body;
 
-    const { gameMod, errors } = await GameModService.create(body);
-
-    if (errors) {
-      res.status(HttpStatus.BAD_REQUEST).json(errors);
-      return;
-    }
-
+    let operationResult;
     try {
-      await gameMod.save();
+      operationResult = await GameModService.create(body);
     } catch(error) {
       console.log(error);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(error);
+      return;
+    }
+
+    const { errors, gameMod } =operationResult
+
+    if (errors) {
+      res.status(HttpStatus.BAD_REQUEST).json(errors);
       return;
     }
 
@@ -34,7 +35,7 @@ class GameModController {
   }
 
   async get(req: Request, res: Response): Promise<void> {
-    const gameModId = prop('gameModId')(req.params);
+    const gameModId = path(['params', 'gameModId'], req);
 
     let game;
 

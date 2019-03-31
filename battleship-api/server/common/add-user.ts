@@ -2,10 +2,14 @@
  * Add the user to request.
  */
 import { Response, NextFunction } from 'express';
+import objOf from 'ramda/src/objOf';
+import path from 'ramda/src/path';
 
-export default function addUser(req: any, res: Response, next: NextFunction) {
-  const id = req.headers['x-user-id'];
+import { RequestWithUser } from '../api/types';
 
-  req.user = id ? { id } : {};
+export default function addUser(req: RequestWithUser, res: Response, next: NextFunction) {
+  const id = path(['headers', 'x-user-id'], req);
+
+  req.user = objOf('id', id);
   next();
 }
