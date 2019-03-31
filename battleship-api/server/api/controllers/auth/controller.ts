@@ -62,13 +62,17 @@ class AuthController {
         const refreshToken = path(['headers', 'x-refresh-token'], req);
         const newTokens = await AuthService.refreshTokens(token, refreshToken);
 
-        if (has('token', newTokens) && has('refreshToken', newTokens)) {
+        if (newTokens && has('token', newTokens) && has('refreshToken', newTokens)) {
           res.set('Access-Control-Expose-Headers', 'x-token, x-refresh-token');
           res.set('x-token', newTokens.token);
           res.set('x-refresh-token', newTokens.refreshToken);
-        }
 
-        user = newTokens.user;
+          user = newTokens.user;
+          return;
+        } else {
+          res.status(400).json({ message: 'token expired or received'});
+          return;
+        }
       }
 
       res.status(200).json(user);

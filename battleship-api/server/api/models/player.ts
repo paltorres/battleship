@@ -5,8 +5,10 @@ import { Document, Schema, Model, model } from 'mongoose';
 import toJson from '@meanie/mongoose-to-json';
 
 import values from 'ramda/src/values';
+import without from 'ramda/src/without';
 
 import { IPlayer } from './interfaces/iplayer';
+import { ShotResult } from '../services/board-service';
 
 export enum PLAYER_ACTIONS {
   SHOT = 'shot',
@@ -16,6 +18,10 @@ export enum PLAYER_ACTIONS {
 export interface IPlayerModel extends IPlayer, Document {
   canDelete(): boolean;
   canShot(): boolean,
+  setReadyToPlay(): void,
+  setCanShot(): void,
+  setWaitForTurn(): void,
+  updateScoring(shootResult: ShotResult): void,
 }
 
 const playerSchema: Schema = new Schema({
@@ -53,16 +59,14 @@ const playerSchema: Schema = new Schema({
     required: true,
     default: 0,
   },
-  // si esto va aca? no che, capaz hagamos un shot history y mandar por ahi la data
-  shoots: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
 });
 
 playerSchema.method('canDelete', canDelete);
 playerSchema.method('canShot', canShot);
+playerSchema.method('setReadyToPlay', setReadyToPlay);
+playerSchema.method('setCanShot', setCanShot);
+playerSchema.method('setWaitForTurn', setWaitForTurn);
+playerSchema.method('updateScoring', updateScoring);
 
 
 function canDelete(): boolean {
@@ -70,6 +74,27 @@ function canDelete(): boolean {
 }
 function canShot(): boolean {
   return this.availableActions.indexOf(PLAYER_ACTIONS.SHOT) !== -1;
+}
+
+function setReadyToPlay(): void {
+  this.availableActions = [];
+}
+
+function setCanShot() {
+  if (!this.canShot()) {
+    this.availableActions.push(PLAYER_ACTIONS.SHOT);
+  }
+}
+
+function setWaitForTurn() {
+  if (this.canShot()) {
+    this.availableActions = without([PLAYER_ACTIONS.SHOT], this.availableActions);
+  }
+}
+
+// TODO: update this
+function updateScoring({ shootResult: ShotResult }): void {
+  this.accuracy = 0;
 }
 
 playerSchema.plugin(toJson);

@@ -5,8 +5,6 @@ import { Player, PLAYER_ACTIONS, IPlayerModel } from '../models/player';
 import { makeValidationError } from './utils';
 import { IShipModel } from '../models/ship';
 
-import { IPlayer } from '../models/interfaces/iplayer';
-
 interface IPlayerCreationObj {
   user: string,
   availableActions?: string[],
@@ -56,22 +54,11 @@ class PlayerService {
   }
 
   /**
-   * Given a player assign and validate the fleet.
+   * Given a player assign and validate the fleet and the user is ready to play.
    */
-  async addFleet({ player, fleet }) {
-    player.fleet = fleet;
-
-    try {
-      await player.validate();
-    } catch(e) {
-      return makeValidationError(e);
-    }
-
-    return player;
-  }
-
   applyFleet({ player, fleet }: { player: IPlayerModel, fleet: IShipModel[] }): void {
     player.fleet = fleet;
+    player.setReadyToPlay();
   }
 }
 

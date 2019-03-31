@@ -1,20 +1,20 @@
 /**
  * Board model.
  */
-import { IShipModel, Cell } from './ship';
-
-import map from 'ramda/src/map';
+import any from 'ramda/src/any';
 import all from 'ramda/src/all';
-import always from 'ramda/src/always';
+import and from 'ramda/src/and';
+import eqProps from 'ramda/src/eqProps';
 import multiply from 'ramda/src/multiply';
 import sum from 'ramda/src/sum';
 import prop from 'ramda/src/prop';
 import forEach from 'ramda/src/forEach';
 import addIndex from 'ramda/src/addIndex';
-import { any } from 'bluebird';
 
+import { IShip } from './interfaces/iship';
+import { IShipModel, Cell } from './ship';
 
-const BOARD_OFFSEST = 1;
+const BOARD_OFFSET = 1;
 
 interface GridValue extends Cell {
   hasShip: boolean,
@@ -36,12 +36,12 @@ export class Board implements IBoard {
   grid = null;
   ships = null;
 
-  constructor({ width, height }: { width: number, height: number }) {
+  constructor({ width, height, ships = [] }: { width: number, height: number, ships?: IShip[] }) {
     // add the matrix
     this.width = width;
     this.height = height;
     this.grid = this.makeGrid();
-    this.ships = [];
+    this.ships = ships;
   }
 
   private makeGrid(): GridValue[][] {
@@ -53,17 +53,13 @@ export class Board implements IBoard {
         row.push({ hasShip: false, coordinateY, coordinateX: i });
       }
       return row;
-    }
-
-    const addGridValue = (_, index) => {
-      columns[index] = createRow(index + BOARD_OFFSEST);
     };
 
-    const grid = addIndex(forEach)(addGridValue, columns);
+    const addGridValue = (_, index) => {
+      columns[index] = createRow(index + BOARD_OFFSET);
+    };
 
-    console.log()
-
-    return grid;
+    return addIndex(forEach)(addGridValue, columns);
   }
 
   getRandomPlace(): Cell {
@@ -95,14 +91,13 @@ export class Board implements IBoard {
       ];
 
       return all(self.canBeCellTaken)(edgeCells);
-    }
+    };
 
-    const areValid = all(isValidCell)(shipCells);
-    return areValid;
+    return all(isValidCell)(shipCells);
   }
 
   private randomCoordinate(max) {
-    return sum([Math.floor(multiply(Math.random(), max)), BOARD_OFFSEST]);
+    return sum([Math.floor(multiply(Math.random(), max)), BOARD_OFFSET]);
   }
 
   private getShipCells({ ship }: { ship: IShipModel }): GridValue[] {
@@ -147,5 +142,18 @@ export class Board implements IBoard {
 
     return this.grid[coordinateY][coordinateX];
   }
-}
 
+  matchPosition({ ship, coordinateX, coordinateY }): boolean {
+    const cellTarget: Cell = { coordinateX, coordinateY };
+    const shipCells = this.getShipCells({ ship });
+
+    const isCellTarget = (shipCell) => and(eqProps('coordinateX', shipCell, cellTarget), eqProps('coordinateY', shipCell, cellTarget));
+
+
+    const existsIntCell = (shipCells) => {
+      return any(isCellTarget)(shipCells);
+    };
+
+    return any(existsIntCell)(shipCells);
+  }
+}

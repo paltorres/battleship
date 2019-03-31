@@ -45,7 +45,7 @@ class GamesController {
     res.status(HttpStatus.OK).json(game);
   }
 
-  async create(req: RequestWithUser, res: Response, next: NextFunction) {
+  async create(req: RequestWithUser, res: Response) {
     const body = prop('body', req);
     const userId = path(['user', 'id'], req);
 
@@ -75,7 +75,7 @@ class GamesController {
     res.status(HttpStatus.CREATED).json(game);
   }
 
-  async addPlayer(req: RequestWithUser, res: Response, next: NextFunction) {
+  async addPlayer(req: RequestWithUser, res: Response) {
     const user = path(['user', 'id'], req);
 
     if (!user) {
@@ -108,10 +108,51 @@ class GamesController {
     res.status(HttpStatus.CREATED).json(game);
   }
 
+  async shotToPlayer(req: RequestWithUser, res: Response) {
+    const user = path(['user', 'id'], req);
+    const shotPayload = prop('body', req);
+
+    if (!user) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'user must be present' });
+      return;
+    }
+
+    if (!shotPayload) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Empty body' });
+      return;
+    }
+
+    const gameId = path(['params', 'gameId'], req);
+
+    let operationResult;
+    try {
+      operationResult = await GameService.shootPlayer({ gameId, user, shotPayload });
+    } catch (e) {
+      log.error(e);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(e);
+    }
+
+    if (!operationResult) {
+      res.status(HttpStatus.NOT_FOUND).json();
+      return;
+    }
+
+    const { errors, result } = operationResult;
+
+    if (errors) {
+      res.status(HttpStatus.BAD_REQUEST).json(errors);
+      return;
+    }
+
+    res.status(HttpStatus.CREATED).json(result);
+  }
+
   router() {
-    return Router().post('/', this.create)
+    return Router()
+      .post('/', this.create)
       .get('/:gameId', this.get)
-      .post('/:gameId/players', this.addPlayer);
+      .post('/:gameId/players', this.addPlayer)
+      .post('/:gameId/players/shots', this.shotToPlayer);
   }
 }
 

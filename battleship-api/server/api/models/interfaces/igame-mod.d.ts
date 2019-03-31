@@ -1,3 +1,6 @@
+/**
+ * Game mod interface.
+ */
 interface FleetConfig {
   type: string,
   quantity: number,
