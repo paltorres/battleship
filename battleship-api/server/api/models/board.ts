@@ -107,7 +107,7 @@ export class Board implements IBoard {
     const { coordinateX, coordinateY } = placement;
 
     if (ship.horizontal()) {
-      for(let i = coordinateX; i < coordinateX + ship.length; i++) {
+      for (let i = coordinateX; i < coordinateX + ship.length; i++) {
         cells.push(this.getCell({ coordinateX: i, coordinateY }));
       }
     } else {
@@ -132,9 +132,14 @@ export class Board implements IBoard {
     forEach(markGridCell, cells);
   }
 
+  /**
+   * The matrix start from 0 and cells start from 1.
+   * The method `randomCoordinate` sum the offset.
+   * @param cell
+   */
   getCell(cell: Cell): GridValue {
-    const coordinateY = prop('coordinateY', cell);
-    const coordinateX = prop('coordinateX', cell);
+    const coordinateY = prop('coordinateY', cell) - BOARD_OFFSET;
+    const coordinateX = prop('coordinateX', cell) - BOARD_OFFSET;
 
     if(this.grid[coordinateY] === undefined) {
       return undefined;
@@ -147,13 +152,10 @@ export class Board implements IBoard {
     const cellTarget: Cell = { coordinateX, coordinateY };
     const shipCells = this.getShipCells({ ship });
 
-    const isCellTarget = (shipCell) => and(eqProps('coordinateX', shipCell, cellTarget), eqProps('coordinateY', shipCell, cellTarget));
-
-
-    const existsIntCell = (shipCells) => {
-      return any(isCellTarget)(shipCells);
+    const isCellTarget = shipCell => {
+      return and(eqProps('coordinateX', shipCell, cellTarget), eqProps('coordinateY', shipCell, cellTarget))
     };
 
-    return any(existsIntCell)(shipCells);
+    return any(isCellTarget)(shipCells);
   }
 }

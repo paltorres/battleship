@@ -1,0 +1,20 @@
+/**
+  ship styles.
+ */
+
+.ship {
+  z-index: 2;
+  left: 0;
+  top: 0;
+  border-style: solid;
+  border-width: 5px;
+  border-color: #00f;
+
+  background: rgba(0,0,255,.05);
+  position: absolute!important;
+  margin: -2px;
+
+  &--sunken {
+    border-color: rgba(255, 0, 0, 0.6);
+  }
+}

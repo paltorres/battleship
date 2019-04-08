@@ -1,6 +1,9 @@
-import winston from 'winston'
+/**
+ * Application Logger.
+ */
+import winston from 'winston';
 
-const level = process.env.LOG_LEVEL || 'debug'
+const level = process.env.LOG_LEVEL || 'debug';
 
 const logger = new winston.Logger({
   transports: [
@@ -11,6 +14,6 @@ const logger = new winston.Logger({
           }
       })
   ]
-})
+});
 
-export default logger
+export default logger;

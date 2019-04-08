@@ -7,7 +7,7 @@ const {
 } = config;
 
 export default {
-  ...environments[config.env],
+  ...environments[env],
   env,
   paths,
 };

@@ -18,9 +18,12 @@ export enum PLAYER_ACTIONS {
 export interface IPlayerModel extends IPlayer, Document {
   canDelete(): boolean;
   canShot(): boolean,
+
   setReadyToPlay(): void,
   setCanShot(): void,
   setWaitForTurn(): void,
+  setAsWinner(): void,
+
   updateScoring(shootResult: ShotResult): void,
 }
 
@@ -59,13 +62,21 @@ const playerSchema: Schema = new Schema({
     required: true,
     default: 0,
   },
+  winner: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
 });
 
 playerSchema.method('canDelete', canDelete);
 playerSchema.method('canShot', canShot);
+
 playerSchema.method('setReadyToPlay', setReadyToPlay);
 playerSchema.method('setCanShot', setCanShot);
 playerSchema.method('setWaitForTurn', setWaitForTurn);
+playerSchema.method('setAsWinner', setAsWinner);
+
 playerSchema.method('updateScoring', updateScoring);
 
 
@@ -90,6 +101,11 @@ function setWaitForTurn() {
   if (this.canShot()) {
     this.availableActions = without([PLAYER_ACTIONS.SHOT], this.availableActions);
   }
+}
+
+function setAsWinner() {
+  this.winner = true;
+  this.availableActions = [];
 }
 
 // TODO: update this

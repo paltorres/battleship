@@ -17,7 +17,6 @@ const App = () => (
     <Head />
 
     <ApolloProvider client={client}>
-      <Navbar />
 
       <MainContainer>
         <WithAuth component={Routes} />

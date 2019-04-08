@@ -1,11 +1,14 @@
 /**
  * Auth model.
  */
-import axios from 'axios';
+import restClient from '../rest-client';
 
-const generateUserModel = ({ req }) => ({
+const generateUserModel = () => ({
   async login({ username, password }) {
-    return await axios.post('http://localhost:3000/api/battleships/auth/token', { username, password });
+    return await restClient.post('auth/token', { username, password });
+  },
+  async create({ username, password }) {
+    return await restClient.post('users', { username, password });
   },
 });
 

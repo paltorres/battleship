@@ -1,25 +1,27 @@
+/**
+ * Application creation
+ */
 import express from 'express';
 import helmet from 'helmet';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
 
-import config from './config';
 import logger from './lib/logger';
+import config from './config';
+
 import createApolloServer from './graphql/create-apollo-server';
+
 
 const devEnvironment = config.env.match(/development|test/);
 const app = express();
 
+const server = createApolloServer({ app, playground: true });
+
 app.use(morgan('tiny'));
 app.use(helmet());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded({ extended: false }));
+// app.use(bodyParser.json());
 
-app.all('/graphql', (req, res, next) => {
-  // console.log(req.headers);
-  next();
-});
-createApolloServer({ app, playground: devEnvironment });
 
 if (devEnvironment) {
   const webpack = require('webpack');
@@ -69,4 +71,4 @@ if (devEnvironment) {
   });
 }
 
-export default app
+export default server

@@ -3,16 +3,12 @@
  */
 import React from 'react';
 
+import './main-container.scss';
 
-const styles= theme => ({
-  content: {
-    padding: `0 ${theme.spacing.unit * 4}px`,
-  }
-});
 
 const MainContainer = ({ children }) => (
-  <main>
-    <div className="content">
+  <main role="mail" className="flex-shrink-0">
+    <div className="container">
       {children}
     </div>
   </main>

@@ -1,0 +1,32 @@
+/**
+
+
+  td {
+    width: 0.5rem;
+    height: 0.5rem;
+    padding: 0rem;
+    div {
+      height: 2em;
+      width: 2em;
+    }
+  }
+
+ */
+
+.game-board {
+  &__container {
+    position: relative;
+    border-right: 2px solid black !important;
+    border-bottom: 2px solid black !important;
+  }
+}
+
+.opponent-board {
+  td {
+    cursor: pointer;
+
+    &:hover {
+      background-color: gray;
+    }
+  }
+}

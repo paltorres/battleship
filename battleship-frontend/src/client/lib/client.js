@@ -3,11 +3,12 @@
  */
 import { ApolloClient } from 'apollo-client';
 import { createHttpLink } from 'apollo-link-http';
-import { ApolloLink } from 'apollo-link';
+import { ApolloLink, split } from 'apollo-link';
+import { WebSocketLink } from 'apollo-link-ws';
 import { setContext } from 'apollo-link-context';
 import { InMemoryCache } from 'apollo-cache-inmemory';
-// import { onError, ErrorHandler, ErrorResponse } from 'apollo-link-error';
-// import gql from 'graphql-tag';
+import { getMainDefinition } from 'apollo-utilities';
+
 
 const middlewareLink = setContext(() => ({
   headers: {
@@ -15,7 +16,7 @@ const middlewareLink = setContext(() => ({
     'x-refresh-token': localStorage.getItem('x-refresh-token'),
   },
 }));
-
+/*
 const afterwareLink = new ApolloLink((operation, forward) =>
   forward(operation).map((response) => {
     const { response: { headers } } = operation.getContext();
@@ -35,32 +36,39 @@ const afterwareLink = new ApolloLink((operation, forward) =>
     return response;
   }),
 );
-
-// TODO: arreglar esta parte, que pasa si me response mal la api
-/*
-export const SET_AUTH = gql`
-  query setAuth {
-    auth {
-     isAuth
-    }
-  }
-`;
-
-
-
-const errorLink = onError(({ operation, networkError, graphQLErrors, response }) => {
-  operation.getContext().cache.writeQuery({
-    query: SET_AUTH, data:
-      {auth: {isAuth: false, __typename: 'Auth'}}
-  });
-});
 */
+
 const httpLink = createHttpLink({
   credentials: 'same-origin'
 });
 
-const link = afterwareLink.concat(middlewareLink.concat(httpLink));
+const wsLink = new WebSocketLink({
+  uri: `ws://localhost:4000/graphql`,
+  options: {
+    reconnect: true,
+    connectionParams: () => {
+      return {
+        headers: {
+          'x-token': localStorage.getItem('x-token'),
+          'x-refresh-token': localStorage.getItem('x-refresh-token'),
+        },
+      };
+    }
+  }
+});
 
+const operationLink = split(
+  // split based on operation type
+  ({ query }) => {
+    const { kind, operation } = getMainDefinition(query);
+    return kind === 'OperationDefinition' && operation === 'subscription';
+  },
+  wsLink,
+  httpLink,
+);
+
+// const link = afterwareLink.concat(middlewareLink.concat(operationLink));
+const link = middlewareLink.concat(operationLink);
 
 const client = new ApolloClient({
   cache: new InMemoryCache(),

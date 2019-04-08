@@ -19,7 +19,8 @@ import all from 'ramda/src/all';
 import { IGame } from './interfaces/igame';
 import { IPlayerModel } from './player';
 import { ShotResult } from '../services/board-service';
-import { Cell } from "./interfaces/iship";
+import { Cell } from './interfaces/iship';
+import { Ship } from './ship';
 
 export enum GAME_STATUS {
   IN_GAME = 'in_game', 
@@ -37,7 +38,7 @@ export interface IGameModel extends IGame, Document {
   isNotInGame(): boolean;
   isNotFinished(): boolean,
   canBeStarted(): boolean,
-  canFinish({ lastPlayerTarget }: { lastPlayerTarget: IPlayerModel }): boolean,
+  canFinish({ lastPlayerShooter }: { lastPlayerShooter: IPlayerModel }): Promise<boolean>,
   canBeDeleted(): boolean,
 
   userAlreadyNotExists(user: string): boolean,
@@ -52,7 +53,7 @@ export interface IGameModel extends IGame, Document {
   addShotToHistory({ shotResult, target, shooter }: { shotResult: ShotResult, target: IPlayerModel, shooter: IPlayerModel }): void,
   nextTurn(): void,
   start(): void,
-  finish(): void,
+  finish({ player }: { player: IPlayerModel }): void,
 }
 
 const TITLE = {
@@ -261,15 +262,24 @@ function nextTurn() {
   this.players[nextTurnIndex].setCanShot();
 }
 
-function canFinish({ lastPlayerTarget }: { lastPlayerTarget: IPlayerModel }): boolean {
-  const isSunken = prop('sunken');
-  const allFleetSunken = all(isSunken);
+async function canFinish({ lastPlayerShooter }: { lastPlayerShooter: IPlayerModel }): Promise<boolean> {
+  const isOpponent = player => player._id !== lastPlayerShooter._id;
+  const opponents = this.players.filter(isOpponent);
 
-  return allFleetSunken(lastPlayerTarget.fleet);
+  const isSunken = prop('sunken');
+  const fleetSunken = all(isSunken);
+  const allOpponentsFleetSunken = all(fleetSunken);
+
+  const opponentsFleet = await Promise.all(opponents.map(
+    opponent => Ship.find({ '_id': { '$in': opponent.fleet } })
+  ));
+
+  return await allOpponentsFleetSunken(opponentsFleet);
 }
 
-function finish(): void {
-  this.status = GAME_STATUS;
+function finish({ player }: { player: IPlayerModel }): void {
+  player.setAsWinner();
+  this.status = GAME_STATUS.FINISHED;
 }
 
 // helper

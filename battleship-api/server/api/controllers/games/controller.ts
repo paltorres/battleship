@@ -1,7 +1,7 @@
 /**
  * Games controller.
  */
-import { NextFunction, Request, Response, Router } from 'express';
+import { Response, Router } from 'express';
 import * as HttpStatus from 'http-status-codes'
 
 import path from 'ramda/src/path';
@@ -13,7 +13,8 @@ import not from 'ramda/src/not';
 
 import { RequestWithUser } from '../../types';
 import log from '../../../common/logger';
-import GameService from '../../services/game-service';
+import gameService from '../../services/game-service';
+
 
 class GamesController {
   routes = this.router();
@@ -30,7 +31,7 @@ class GamesController {
 
     let game;
     try {
-      game = await GameService.getDetail({ id: gameId, userId });
+      game = await gameService.getDetail({ id: gameId, userId });
     } catch (e) {
       console.log(e);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({});
@@ -58,7 +59,7 @@ class GamesController {
 
     let operationResult;
     try {
-      operationResult = await GameService.create(gamePayload);
+      operationResult = await gameService.create(gamePayload);
     } catch(error) {
       console.log(error);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(error);
@@ -75,6 +76,27 @@ class GamesController {
     res.status(HttpStatus.CREATED).json(game);
   }
 
+  async search(req: RequestWithUser, res: Response) {
+    const params = prop('query', req);
+    const user = path(['user', 'id'], req);
+
+    if (!user) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'user is required' });
+      return;
+    }
+
+    let gameList;
+    try {
+      gameList = await gameService.search({ params, user });
+    } catch (e) {
+      console.log(e);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({});
+      return;
+    }
+
+    res.status(HttpStatus.OK).json(gameList);
+  }
+
   async addPlayer(req: RequestWithUser, res: Response) {
     const user = path(['user', 'id'], req);
 
@@ -87,7 +109,7 @@ class GamesController {
 
     let operationResult;
     try {
-      operationResult = await GameService.addPlayerToGame({ gameId, user });
+      operationResult = await gameService.addPlayerToGame({ gameId, user });
     } catch (e) {
       log.error(e);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(e);
@@ -126,7 +148,7 @@ class GamesController {
 
     let operationResult;
     try {
-      operationResult = await GameService.shootPlayer({ gameId, user, shotPayload });
+      operationResult = await gameService.shootPlayer({ gameId, user, shotPayload });
     } catch (e) {
       log.error(e);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(e);
@@ -147,10 +169,44 @@ class GamesController {
     res.status(HttpStatus.CREATED).json(result);
   }
 
+  async delete(req: RequestWithUser, res: Response) {
+    const userId = path(['user', 'id'], req);
+
+    if (!userId) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'user must be present' });
+      return;
+    }
+
+    const gameId = path(['params', 'gameId'], req);
+
+    let operationResult;
+    try {
+      operationResult = await gameService.remove({ id: gameId, userId });
+    } catch (e) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(e);
+    }
+
+    if (!operationResult) {
+      res.status(HttpStatus.NOT_FOUND).json();
+      return;
+    }
+
+    const { error } = operationResult;
+
+    if (error) {
+      res.status(HttpStatus.UNAUTHORIZED).json(error);
+      return;
+    }
+
+    res.status(HttpStatus.NO_CONTENT).json();
+  }
+
   router() {
     return Router()
       .post('/', this.create)
+      .get('/search', this.search)
       .get('/:gameId', this.get)
+      .delete('/:gameId', this.delete)
       .post('/:gameId/players', this.addPlayer)
       .post('/:gameId/players/shots', this.shotToPlayer);
   }

@@ -3,5 +3,5 @@
  */
 export default {
   timeout: 5000,
-  baseUrl: 'http://localhost:3000/api/battleships/',
+  baseURL: 'http://localhost:3000/api/battleships/',
 };

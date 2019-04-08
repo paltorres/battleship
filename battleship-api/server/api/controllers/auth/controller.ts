@@ -51,7 +51,7 @@ class AuthController {
     res.status(200).json(response);
   }
 
-  async me(req: Request, res: Response): Promise<void> {
+  async validate(req: Request, res: Response): Promise<void> {
     const token = path(['headers', 'x-token'], req);
 
     if (token) {
@@ -68,6 +68,7 @@ class AuthController {
           res.set('x-refresh-token', newTokens.refreshToken);
 
           user = newTokens.user;
+          res.status(200).json(user);
           return;
         } else {
           res.status(400).json({ message: 'token expired or received'});
@@ -84,7 +85,7 @@ class AuthController {
   router() {
     return Router()
       .post('/token', this.getToken)
-      .get('/me', this.me);
+      .get('/validate', this.validate);
   }
 }
 

@@ -1,0 +1,23 @@
+/**
+
+ */
+
+.board-cell {
+  border-top: 2px solid black !important;
+  border-left: 2px solid black;
+  width: 2rem;
+  height: 2rem;
+  padding: 0 !important;
+  text-align: center;
+  position: relative;
+
+  .cell-fired {
+    &--miss {
+
+    }
+
+    &--fired {
+
+    }
+  }
+}

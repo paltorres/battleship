@@ -1,13 +1,5 @@
-/**
- * Connectar a la base de datos y meter este modelo por defecto si no existe cada vez que se inicie el servidor.
- *  5c9f8db88206ea1cbc67708c -> user creador
- * 5c9fb8b38d2dbc686365458a -> se va a unir
- *
- */
-
-
-export const defaultMod = {
-  name: 'Default mod',
+const modData = {
+  name: 'Normal - 1 vs 1',
   playerQuantity: 2,
   style: 'default',
   fleet: [
@@ -33,3 +25,23 @@ export const defaultMod = {
     width: 10,
   },
 };
+
+const fastGame = {
+  name: 'Fast - 1 vs 1',
+  playerQuantity: 2,
+  style: 'default',
+  fleet: [
+    {
+      type: 'destroyer',
+      quantity: 1,
+    },
+  ],
+  board: {
+    height: 3,
+    width: 3,
+  },
+};
+
+
+db.gamemods.insert(modData);
+db.gamemods.insert(fastGame);

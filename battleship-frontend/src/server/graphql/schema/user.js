@@ -1,7 +1,6 @@
 /**
  * User schema.
  */
-
 export const typeDef = `
   type User {
     id: ID!
@@ -13,23 +12,19 @@ export const typeDef = `
   }
   
   type LoginResponse {
-    ok: Boolean!
     token: String
     refreshToken: String
   }
 
   extend type Mutation {
     login(username: String!, password: String!): LoginResponse
+    createUser(username: String!, password: String!): LoginResponse
   }
 `;
-
-// podemos usar directivas para eso, maybe?
 
 export const resolvers = {
   Query: {
     me: async (parent, params, context) => {
-      console.log('asdasd');
-      console.log(context);
       // const response = await context.models.user.me({ username, password });
       return context.user;
     },
@@ -40,10 +35,25 @@ export const resolvers = {
         const response = await context.models.user.login({ username, password });
         return response.data;
       } catch (e) {
-        return e.response.data;
+        throw new Error('wrong username or password');
       }
     },
+
+    createUser: async (parent, { username, password}, context) => {
+      try {
+        await context.models.user.create({ username, password });
+      } catch (e) {
+        console.log(e);
+        return { token: null, refreshToken: null };
+      }
+
+      try {
+        const loginResponse = await context.models.user.login({ username, password });
+        return loginResponse.data;
+      } catch (e) {
+        console.log(e);
+        return e.response.data;
+      }
+    }
   },
-  User: {
-  }
 };

@@ -1,0 +1,21 @@
+/**
+  Board mark styles.
+ */
+
+.board-mark {
+  position: absolute;
+  font-size: 11px;
+  z-index: -1;
+
+  &__col {
+    top: -2em;
+    text-align: center;
+  }
+
+  &__row {
+    left: -3em;
+    width: 2em;
+    text-align: right;
+    height: 1em;
+  }
+}

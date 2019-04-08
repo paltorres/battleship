@@ -9,8 +9,11 @@ import addIndex from 'ramda/src/addIndex';
 import prop from 'ramda/src/prop';
 import has from 'ramda/src/has';
 import equals from 'ramda/src/equals';
-import __ from 'ramda/src/__';
 import not from 'ramda/src/not';
+import filter from 'ramda/src/filter';
+import pipe from 'ramda/src/pipe';
+import identity from 'ramda/src/identity';
+import __ from 'ramda/src/__';
 
 import playerService from './player-service';
 import shipService from './ship-service';
@@ -27,6 +30,13 @@ interface GamePayload {
   mod: string,
 }
 
+interface IGameSearch {
+  status?: string,
+  user_player?: string,
+  is_creator?: boolean,
+  mod?: string,
+}
+
 class GameService {
   async create({ title, user, mod }: GamePayload) {
     const { player, errors } = await playerService.createInitialPlayer({ user });
@@ -35,7 +45,7 @@ class GameService {
       return errors;
     }
 
-    const gamePayload = { title, players: [ player.id ], mod };
+    const gamePayload = { title, players: [ player ], mod };
     const game = new Game(gamePayload);
 
     try {
@@ -51,13 +61,13 @@ class GameService {
       await player.remove();
       throw e;
     }
-    // send to game pool
-    return objOf('game')(game);
+
+    return { game };
   }
 
   async getDetail({ id, userId }) {
     // TODO: add the user id in filter
-    const game = await Game.findOne({ '_id': id })
+    const game = await Game.findOne({ '_id': id, status: { '$ne': GAME_STATUS.DELETED } })
       .populate('mod')
       .populate('players');
 
@@ -129,7 +139,7 @@ class GameService {
     return objOf('game', game);
   }
 
-  private async startGame({ game }) {
+  private async startGame({ game }: { game: IGameModel }) {
     // send to topic
     const fleetQuantity = path(['players', 'length'], game);
     const fleetList = await boardService.createFleets({ mod: game.mod, fleetQuantity });
@@ -146,15 +156,18 @@ class GameService {
     const lastPlayerAdded = last(game.players);
     lastPlayerAdded.setCanShot();
 
-    await Promise.all(game.players.map(async p => await p.save()));
+    await Promise.all(game.players.map(function (p: IPlayerModel): Promise<IPlayerModel> {
+      return p.save()
+    }));
+
     game.start();
   }
 
   async shootPlayer({ gameId, user, shotPayload }) {
     let game: IGameModel;
-    const hasKey = has(__, shotPayload);
+    const shotHasKey = has(__, shotPayload);
 
-    if (!hasKey('playerTarget') || !hasKey('coordinateX') || !hasKey('coordinateY')) {
+    if (!shotHasKey('playerTarget') || !shotHasKey('coordinateX') || !shotHasKey('coordinateY')) {
       return { errors: 'The values: playerTarget, coordinateX and coordinateY are required' };
     }
 
@@ -173,6 +186,10 @@ class GameService {
     const { coordinateX, coordinateY } = shotPayload;
     const playerShooter = game.getPlayerByUser({ user });
     const playerTarget = game.getPlayerById(prop('playerTarget', shotPayload));
+
+    if (not(playerTarget)) {
+      return { errors: { message: `player target not belong to game ${gameId}` } };
+    }
 
     const error = game.checkIfCanShoot({ playerShooter, playerTarget, cellTarget: { coordinateX, coordinateY } });
 
@@ -194,16 +211,88 @@ class GameService {
 
     if (shotResult.miss) {
       game.nextTurn();
-    } else if (game.canFinish({ lastPlayerTarget: playerTarget })) {
-      // TODO: send the new to topic
-      game.finish();
+    } else {
+      const canFinish = await game.canFinish({ lastPlayerShooter: playerShooter });
+      if (canFinish) {
+        game.finish({ player: playerShooter });
+      }
     }
 
-    await playerShooter.save();
-    await playerTarget.save();
-    await game.save();
+    await Promise.all([
+      playerShooter.save(),
+      playerTarget.save(),
+      game.save(),
+    ]);
 
     return { result: shotResult };
+  }
+
+  async search({ params, user }: { params: IGameSearch, user: string }) {
+    let query = {};
+
+    if (params.status) {
+      query = { ...query, status: params.status };
+    }
+
+    let pipeFilters = identity;
+
+    if (params.is_creator) {
+      const shouldBeCreator = equals(params.is_creator, 'true');
+
+      const filterGames = (gameList) => {
+        return gameList.filter((game) => {
+          const player = game.getPlayerByUser({ user });
+
+          if (!player || !player.isCreator) {
+            return !shouldBeCreator;
+          } else if (player && player.isCreator) {
+            return shouldBeCreator;
+          }
+          return false;
+        })
+      };
+
+      pipeFilters = pipe(pipeFilters, filterGames);
+    }
+
+    if (params.user_player) {
+      const userFn = filter((game) => game.getPlayerByUser({ user: params.user_player }));
+      pipeFilters = pipe(pipeFilters, userFn);
+    }
+
+    if (params.mod) {
+      const modFn = filter((game) => game.mod.toString() === params.mod);
+      pipeFilters = pipe(pipeFilters, modFn);
+    }
+
+
+    const gameList = await Game.find(query).populate('players');
+
+    const data = pipeFilters(gameList);
+
+    return { count: data.length, data };
+  }
+
+  async remove({ id, userId }: { id: string, userId: string }) {
+    const game = <IGameModel> await Game.findById(id).populate('players');
+
+    if (!game) {
+      return null;
+    }
+
+    const player = <IPlayerModel>game.getPlayerByUser({ user: userId });
+
+    if (!player || not(equals(player.user.toString()))) {
+      return null;
+    }
+
+    if (!player.canDelete() || not(game.canBeDeleted())) {
+      return { error: 'Game started or user without permission' };
+    }
+
+    await Game.findByIdAndDelete(id);
+
+    return { result: true };
   }
 }
 

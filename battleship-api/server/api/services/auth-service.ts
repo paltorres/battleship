@@ -25,13 +25,20 @@ interface TokenResponse {
 class AuthService {
   createTokens(user, refreshSecret = SECRET_2): TokenResponse {
     const token = jwt.sign(
-      objOf('user')(path(['username', 'id'], user)),
+      {
+        user: {
+          id: prop('id', user),
+          username: prop('username', user),
+        },
+      },
       SECRET,
-      objOf('expiresIn')('1h'),
+      objOf('expiresIn')('7d'),
     );
 
     const refreshToken = jwt.sign(
-      objOf('user')(prop('id', user)),
+      {
+        user: { id: prop('id', user) },
+      },
       refreshSecret,
       objOf('expiresIn')('7d'),
     );
@@ -42,7 +49,7 @@ class AuthService {
   async refreshTokens(token: string, refreshToken: string) {
     const value = tryCatch(jwt.decode, always(null))(refreshToken);
 
-    if (!value || !hasPath(['user', 'id'])) {
+    if (!value || !hasPath(['user', 'id'], value)) {
       return null;
     }
     const userId = path(['user', 'id'], value);
@@ -51,12 +58,12 @@ class AuthService {
     const user: IUserModel = await User.findById(userId);
     const refreshSecret = `${user.password}${SECRET_2}`;
 
-    const verifyError = tryCatch(jwt.verify, identity)(refreshToken, refreshSecret);
+    const verifyError = tryCatch(jwt.verify, identity)(refreshToken, SECRET_2);
 
     if (verifyError) {
       return null;
     }
-    const newTokens = await this.createTokens(user, refreshSecret);
+    const newTokens = await this.createTokens(user, SECRET_2);
 
     return { user, ...newTokens };
   }

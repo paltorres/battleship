@@ -1,25 +1,29 @@
 /**
  * The apollo context.
  */
-import getUser from './get-user';
+import validateUser from './validate-user';
 import generateModels from './generate-models';
 
-const apolloContext = async ({ req }) => {
-  try {
-    console.log('asdads');
-    console.log(req.headers);
-    req.user = await getUser({ req });
-    console.log(req.user);
-  } catch(e) {
-    console.log('1212312313213');
-    console.log(e);
+
+const apolloContext = async ({ req, connection }) => {
+  let headers = {};
+  if (connection) {
+    headers = connection.context.headers;
+  } else {
+    headers = req.headers;
   }
 
-  console.log('ppppppppp');
-  // add the user to the context
+  let user = null;
+  try {
+    user = await validateUser({ headers });
+  } catch(e) {
+    // if this fail do nothing, why? because no why
+    console.log('Error validating user', e.response.status, e.response.data);
+  }
+
   return {
-    user: req.user,
-    models: generateModels({ req }),
+    user,
+    models: generateModels({ user }),
   };
 };
 
