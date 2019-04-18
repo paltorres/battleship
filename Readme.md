@@ -31,12 +31,16 @@ $ sudo ./commands/host_config.sh
 $ cd ./battleship-api && npm install && cd ../battheship-frontend && npm install
 ```
 
-*Alternatively you may use the watcher for automatic assets rebuilding: `npm run watch`*
-
 ### 2) Run the app and mongo:
 
 ```
 $ mongod
+```
+
+IMPORTANT: add the required initial data:
+
+```
+$ ./commands/insert_mod.sh
 ```
 
 ```
@@ -53,6 +57,8 @@ $ cd ./battleship-frontend && npm run start-dev
 ```
 http://dev.battleship.com:4000
 ```
+
+At first time must create users.
 
 
 That's it.
